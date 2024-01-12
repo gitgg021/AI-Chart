@@ -29,8 +29,8 @@ public class CharacterRecognition {
     private String requestUrl = "https://api.xf-yun.com/v1/private/hh_ocr_recognize_doc";
     //控制台获取以下信息
     private String appid = "xxx";
-    private String apiSecret = "xxx";
-    private String apiKey = "xxx";
+    private String apiSecret = "xx";
+    private String apiKey = "xx";
     //图片存放位置
     private static File file;
     //解析Json

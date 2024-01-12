@@ -19,13 +19,17 @@ public class BigModelChar extends WebSocketListener {
     // 地址与鉴权信息  https://spark-api.xf-yun.com/v1.1/chat   1.5地址  domain参数为general
     // 地址与鉴权信息  https://spark-api.xf-yun.com/v2.1/chat   2.0地址  domain参数为generalv2
     public static final String hostUrl = "https://spark-api.xf-yun.com/v3.1/chat";
-    public static final String appid = "xxx";
-    public static final String apiSecret = "xxx";
-    public static final String apiKey = "xxx";
+    public static final String appid = "xx";
+    public static final String apiSecret = "xx";
+    public static final String apiKey = "xx";
+
     public static List<RoleContent> historyList = new ArrayList<>(); // 对话历史存储集合
+
     public static String totalAnswer = ""; // 大模型的答案汇总
 
-    //当前问题id
+    /**
+     * 当前问题id
+     */
     private static long questionId;
 
     private static RedissonClient redissonClient;
@@ -47,11 +51,17 @@ public class BigModelChar extends WebSocketListener {
         this.wsCloseFlag = wsCloseFlag;
     }
 
+    /**
+     *
+     */
     public BigModelChar(long questionId, RedissonClient redissonClient) {
         this.questionId = questionId;
         this.redissonClient = redissonClient;
     }
 
+    /**
+     *
+     */
     public void getResult(String newQuestion) {
         try {
 
@@ -113,6 +123,9 @@ public class BigModelChar extends WebSocketListener {
         }
     }
 
+    /**
+     *
+     */
     Thread sleepThread;
 
     // 线程来发送音频与参数
@@ -174,7 +187,10 @@ public class BigModelChar extends WebSocketListener {
                         break;
                     }
                 }
-                //ai数据生成完毕哦，向redis写入键
+
+                /**
+                 *  AI数据生成完毕，向redis写入键
+                 */
                 RBucket<String> bucket = redissonClient.getBucket("complete" + questionId);
                 bucket.set("true");
                 webSocket.close(1000, "");
@@ -196,13 +212,17 @@ public class BigModelChar extends WebSocketListener {
         myThread.start();
     }
 
+    /**
+     *
+     * @return
+     */
     public String getReturn() {
         // 创建一个新的线程
         sleepThread = new Thread(() -> {
             try {
-//                // 线程休眠7秒
-//                Thread.sleep(40000);
-                //循环等待ai生成完毕
+               /*线程休眠7秒
+               Thread.sleep(40000);
+               循环等待ai生成完毕*/
                 int times = 0;//现在循环次数
                 while (true) {
                     if (times > 90)
