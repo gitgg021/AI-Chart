@@ -1,8 +1,13 @@
 package com.caocao.springbootinit.controller;
 
+import cn.hutool.core.io.FileUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.caocao.springbootinit.annotation.AuthCheck;
+import com.caocao.springbootinit.common.BaseResponse;
+import com.caocao.springbootinit.common.DeleteRequest;
+import com.caocao.springbootinit.common.ErrorCode;
+import com.caocao.springbootinit.common.ResultUtils;
 import com.caocao.springbootinit.constant.CommonConstant;
 import com.caocao.springbootinit.constant.UserConstant;
 import com.caocao.springbootinit.exception.BusinessException;
@@ -11,10 +16,6 @@ import com.caocao.springbootinit.model.dto.chart.*;
 import com.caocao.springbootinit.model.entity.Chart;
 import com.caocao.springbootinit.model.entity.User;
 import com.caocao.springbootinit.service.ChartService;
-import com.caocao.springbootinit.common.BaseResponse;
-import com.caocao.springbootinit.common.DeleteRequest;
-import com.caocao.springbootinit.common.ErrorCode;
-import com.caocao.springbootinit.common.ResultUtils;
 import com.caocao.springbootinit.service.UserService;
 import com.caocao.springbootinit.utils.AiUtils;
 import com.caocao.springbootinit.utils.ExcelUtils;
@@ -32,7 +33,6 @@ import javax.servlet.http.HttpServletRequest;
 
 /**
  * 接口
- *
  */
 @RestController
 @RequestMapping("/chart")
@@ -162,7 +162,7 @@ public class ChartController {
      */
     @PostMapping("/list/page/vo")
     public BaseResponse<Page<Chart>> listChartByPage(@RequestBody ChartQueryRequest chartQueryRequest,
-                                                       HttpServletRequest request) {
+                                                     HttpServletRequest request) {
         long current = chartQueryRequest.getCurrent();
         long size = chartQueryRequest.getPageSize();
         // 限制爬虫
@@ -181,7 +181,7 @@ public class ChartController {
      */
     @PostMapping("/my/list/page/vo")
     public BaseResponse<Page<Chart>> listMyChartByPage(@RequestBody ChartQueryRequest chartQueryRequest,
-                                                         HttpServletRequest request) {
+                                                       HttpServletRequest request) {
         if (chartQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -247,8 +247,8 @@ public class ChartController {
         String sortField = chartQueryRequest.getSortField();
         String sortOrder = chartQueryRequest.getSortOrder();
 
-        queryWrapper.eq(id !=null && id > 0, "id", id);
-        queryWrapper.like(StringUtils.isNotBlank(name),"name",name);
+        queryWrapper.eq(id != null && id > 0, "id", id);
+        queryWrapper.like(StringUtils.isNotBlank(name), "name", name);
         queryWrapper.eq(StringUtils.isNotBlank(goal), "goal", goal);
         queryWrapper.like(StringUtils.isNotBlank(chartType), "chartType", chartType);
         queryWrapper.eq(ObjectUtils.isNotEmpty(userId), "userId", userId);
@@ -268,7 +268,7 @@ public class ChartController {
      */
     @PostMapping("/gen")
     public BaseResponse<AIResultDto> getChartByAi(@RequestPart("file") MultipartFile multipartFile,
-                                             GenChartByAiRequest genChartByAiRequest, HttpServletRequest request) {
+                                                  GenChartByAiRequest genChartByAiRequest, HttpServletRequest request) {
         //通过response对象拿到用户id(必须登录才能使用)
         User loginUser = userService.getLoginUser(request);
         String name = genChartByAiRequest.getName();
@@ -278,13 +278,26 @@ public class ChartController {
 
         //校验
         //分析目标为空,就抛出请求参数异常,并给出提示
-        ThrowUtils.throwIf(StringUtils.isBlank(goal),ErrorCode.PARAMS_ERROR,"目标为空");
+        ThrowUtils.throwIf(StringUtils.isBlank(goal), ErrorCode.PARAMS_ERROR, "目标为空");
         //如果不为空,并且名称长度大于100,就抛出异常,并给出提示
-        ThrowUtils.throwIf(StringUtils.isNotBlank(name) && name.length() > 100,ErrorCode.PARAMS_ERROR,"名称过长");
+        ThrowUtils.throwIf(StringUtils.isNotBlank(name) && name.length() > 100, ErrorCode.PARAMS_ERROR, "名称过长");
+        /**
+         * 校验文件
+         * 首先,拿到用户请求的文件
+         * 取到原始文件大小
+         */
         //判断大小是否超过1MB
         final long ONE_MB = 1024 * 1024L;
         long size = multipartFile.getSize();
         ThrowUtils.throwIf(size > ONE_MB, ErrorCode.PARAMS_ERROR, "文件过大");
+
+        //判断文件类型
+        String originalFilename = multipartFile.getOriginalFilename();
+        String suffix = FileUtil.getSuffix(originalFilename);
+        ThrowUtils.throwIf(StringUtils.isBlank(suffix), ErrorCode.PARAMS_ERROR, "文件名异常");
+        boolean isExcel = suffix.equals("xlsx") || suffix.equals("xls");
+        ThrowUtils.throwIf(!isExcel, ErrorCode.PARAMS_ERROR, "文件类型错误");
+
 
         //根据用户上传的数据，压缩ai提问语
         StringBuffer res = new StringBuffer();
@@ -304,7 +317,7 @@ public class ChartController {
         chart.setChartType(chartType);
         //将创建的图表保存到数据库
         boolean save = chartService.save(chart);
-        ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR, "保存失败");
+        ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR, "图表保存失败");
 
         //调用ai
         AiUtils aiUtils = new AiUtils(redissonClient);
@@ -362,6 +375,6 @@ public class ChartController {
         biResponse.setGenResult(genResult);
         biResponse.setCharId(chart.getId());
         return ResultUtils.success(biResponse);*/
-    }
+}
 
 
