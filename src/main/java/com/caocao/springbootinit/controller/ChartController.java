@@ -12,6 +12,7 @@ import com.caocao.springbootinit.constant.CommonConstant;
 import com.caocao.springbootinit.constant.UserConstant;
 import com.caocao.springbootinit.exception.BusinessException;
 import com.caocao.springbootinit.exception.ThrowUtils;
+import com.caocao.springbootinit.manager.RedisLimiterManager;
 import com.caocao.springbootinit.model.dto.chart.*;
 import com.caocao.springbootinit.model.entity.Chart;
 import com.caocao.springbootinit.model.entity.User;
@@ -47,6 +48,9 @@ public class ChartController {
 
     @Resource
     RedissonClient redissonClient;
+
+    @Resource
+    private RedisLimiterManager redisLimiterManager;
 
     // region 增删改查
 
@@ -297,6 +301,9 @@ public class ChartController {
         ThrowUtils.throwIf(StringUtils.isBlank(suffix), ErrorCode.PARAMS_ERROR, "文件名异常");
         boolean isExcel = suffix.equals("xlsx") || suffix.equals("xls");
         ThrowUtils.throwIf(!isExcel, ErrorCode.PARAMS_ERROR, "文件类型错误");
+
+        //限流判断,每个用户一个限流器
+        redisLimiterManager.doRateLimit("genChartByAi_"+loginUser.getId());
 
 
         //根据用户上传的数据，压缩ai提问语
