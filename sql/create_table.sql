@@ -35,7 +35,7 @@ create table chart
     isDelete    tinyint  default 0                 not null comment '是否删除',
     name        varchar(128)                       null comment '图表名称',
     execMessage text                               null comment '执行信息',
-    chartState  int      default 0                 not null comment '生成状态：0:等待1:运行中2:失败3:成功'
+    chartState  varchar(128)       default 'wait'  not null comment 'wait,running,succend,failed'
 )
     comment '图表信息表' collate = utf8mb4_unicode_ci;
 
