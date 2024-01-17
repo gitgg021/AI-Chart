@@ -76,9 +76,9 @@ public class Chart implements Serializable {
     private String execMessage;
 
     /**
-     * 生成状态：0:等待1:运行中2:失败3:成功
+     * 生成状态：排队中:wait 执行中running 已完成succeed 失败failed
      */
-    private Integer chartState;
+    private String status;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
