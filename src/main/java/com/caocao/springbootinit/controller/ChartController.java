@@ -16,6 +16,7 @@ import com.caocao.springbootinit.manager.RedisLimiterManager;
 import com.caocao.springbootinit.model.dto.chart.*;
 import com.caocao.springbootinit.model.entity.Chart;
 import com.caocao.springbootinit.model.entity.User;
+import com.caocao.springbootinit.mq.MyMessageProducer;
 import com.caocao.springbootinit.service.ChartService;
 import com.caocao.springbootinit.service.UserService;
 import com.caocao.springbootinit.utils.AiUtils;
@@ -56,6 +57,9 @@ public class ChartController {
 
     @Resource
     private ThreadPoolExecutor threadPoolExecutor;
+
+    @Resource
+    MyMessageProducer myMessageProducer;
 
     // region 增删改查
 
@@ -428,7 +432,7 @@ public class ChartController {
             boolean update = chartService.updateById(updateChart);
             //如果提交失败(一般情况下,更新失败可能意味着你的数据库出问题了)
             if (!update) {
-                handleChartUpdateError(chart.getId(), "更新图表执行中状态失败");
+                chartService.handleChartUpdateError(chart.getId(), "更新图表执行中状态失败");
                 return;
             }
             //调用ai
@@ -443,7 +447,7 @@ public class ChartController {
             updateChartResult.setStatus("succeed");
             boolean updateById = chartService.updateById(updateChartResult);
             if(!updateById){
-                handleChartUpdateError(chart.getId(),"更新图表失败");
+                chartService.handleChartUpdateError(chart.getId(),"更新图表失败");
          }
         },threadPoolExecutor);
 
@@ -453,17 +457,86 @@ public class ChartController {
         return ResultUtils.success(ans);
     }
 
-    //定义一个异常工具类
-    private void handleChartUpdateError(long chartId, String execMessage) {
-        Chart updateChartResult = new Chart();
-        updateChartResult.setId(chartId);
-        updateChartResult.setStatus("failed");
-        updateChartResult.setExecMessage(execMessage);
-        boolean updateResult = chartService.updateById(updateChartResult);
-        if (!updateResult) {
-            log.error("更新图表失败" + chartId + "," + execMessage);
+
+
+    /**
+     * 智能分析(异步)
+     *
+     * @param multipartFile
+     * @param genChartByAiRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/gen/async/mq")
+    public BaseResponse<AIResultDto> genChartByAiAsyncMq(@RequestPart("file") MultipartFile multipartFile,
+                                                       GenChartByAiRequest genChartByAiRequest, HttpServletRequest request) {
+        //通过response对象拿到用户id(必须登录才能使用)
+        User loginUser = userService.getLoginUser(request);
+        String name = genChartByAiRequest.getName();
+        String goal = genChartByAiRequest.getGoal();
+        String chartType = genChartByAiRequest.getChartType();
+
+
+        //校验
+        //分析目标为空,就抛出请求参数异常,并给出提示
+        ThrowUtils.throwIf(StringUtils.isBlank(goal), ErrorCode.PARAMS_ERROR, "目标为空");
+        //如果不为空,并且名称长度大于100,就抛出异常,并给出提示
+        ThrowUtils.throwIf(StringUtils.isNotBlank(name) && name.length() > 100, ErrorCode.PARAMS_ERROR, "名称过长");
+        /**
+         * 校验文件
+         * 首先,拿到用户请求的文件
+         * 取到原始文件大小
+         */
+        //判断大小是否超过1MB
+        final long ONE_MB = 1024 * 1024L;
+        long size = multipartFile.getSize();
+        ThrowUtils.throwIf(size > ONE_MB, ErrorCode.PARAMS_ERROR, "文件过大");
+
+        //判断文件类型
+        String originalFilename = multipartFile.getOriginalFilename();
+        String suffix = FileUtil.getSuffix(originalFilename);
+        ThrowUtils.throwIf(StringUtils.isBlank(suffix), ErrorCode.PARAMS_ERROR, "文件名异常");
+        boolean isExcel = suffix.equals("xlsx") || suffix.equals("xls");
+        ThrowUtils.throwIf(!isExcel, ErrorCode.PARAMS_ERROR, "文件类型错误");
+
+
+
+
+        String data = ExcelUtils.excelToCsv(multipartFile);
+
+
+        Chart chart = new Chart();
+        chart.setName(name);
+        chart.setGoal(goal);
+        chart.setChartData(data);
+        chart.setChartType(chartType);
+
+        //设置任务状态为排队中
+        chart.setStatus("wait");
+        chart.setUserId(loginUser.getId());
+
+        //将创建的图表保存到数据库
+        boolean save = chartService.save(chart);
+        ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR, "图表保存失败");
+
+
+        //使用mq发送任务
+        try {
+            String message = chart.getId() + "," + loginUser.getId();
+            myMessageProducer.sendMessage(message);
+
+        } catch (Exception e) {
+            chartService.handleChartUpdateError(chart.getId(), "Ai生成图表失败" + e.getMessage());
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Ai生成图表失败");
         }
+
+        AIResultDto ans = new AIResultDto();
+        ans.setChartId(chart.getId());
+        return ResultUtils.success(ans);
     }
+
+
+
 }
 
 
