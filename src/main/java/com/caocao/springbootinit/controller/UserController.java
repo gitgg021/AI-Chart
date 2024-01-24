@@ -63,6 +63,11 @@ public class UserController {
         if (userRegisterRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+
+        //设置头像
+        User user = new User();
+        user.setUserAvatar("https://www.codefather.cn/logo.png");
+
         String userAccount = userRegisterRequest.getUserAccount();
         String userPassword = userRegisterRequest.getUserPassword();
         String checkPassword = userRegisterRequest.getCheckPassword();

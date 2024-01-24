@@ -22,6 +22,7 @@ import com.caocao.springbootinit.service.UserService;
 import com.caocao.springbootinit.utils.AiUtils;
 import com.caocao.springbootinit.utils.ExcelUtils;
 import com.caocao.springbootinit.utils.SqlUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -60,8 +61,6 @@ public class ChartController {
 
     @Resource
     MyMessageProducer myMessageProducer;
-
-    // region 增删改查
 
     /**
      * 创建
@@ -272,7 +271,7 @@ public class ChartController {
     }
 
     /**
-     * 智能分析
+     * 智能分析(同步)
      *
      * @param multipartFile
      * @param genChartByAiRequest
@@ -281,7 +280,7 @@ public class ChartController {
      */
     @PostMapping("/gen")
     public BaseResponse<AIResultDto> getChartByAi(@RequestPart("file") MultipartFile multipartFile,
-                                                  GenChartByAiRequest genChartByAiRequest, HttpServletRequest request) {
+                                                  GenChartByAiRequest genChartByAiRequest, HttpServletRequest request) throws JsonProcessingException {
         //通过response对象拿到用户id(必须登录才能使用)
         User loginUser = userService.getLoginUser(request);
         String name = genChartByAiRequest.getName();
@@ -294,11 +293,8 @@ public class ChartController {
         ThrowUtils.throwIf(StringUtils.isBlank(goal), ErrorCode.PARAMS_ERROR, "目标为空");
         //如果不为空,并且名称长度大于100,就抛出异常,并给出提示
         ThrowUtils.throwIf(StringUtils.isNotBlank(name) && name.length() > 100, ErrorCode.PARAMS_ERROR, "名称过长");
-        /**
-         * 校验文件
-         * 首先,拿到用户请求的文件
-         * 取到原始文件大小
-         */
+
+        //校验文件
         //判断大小是否超过1MB
         final long ONE_MB = 1024 * 1024L;
         long size = multipartFile.getSize();
@@ -332,6 +328,8 @@ public class ChartController {
         chart.setChartData(data);
         chart.setChartType(chartType);
         chart.setUserId(loginUser.getId());
+        chart.setStatus("succeed");
+
 
         //将创建的图表保存到数据库
         boolean save = chartService.save(chart);
@@ -437,7 +435,12 @@ public class ChartController {
             }
             //调用ai
             AiUtils aiUtils = new AiUtils(redissonClient);
-            AIResultDto ans = aiUtils.getAns(chart.getId(), res.toString());
+            AIResultDto ans = null;
+            try {
+                ans = aiUtils.getAns(chart.getId(), res.toString());
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
 
             //调用AI得到结果之后,再更新一次
             Chart updateChartResult = new Chart();
@@ -446,10 +449,10 @@ public class ChartController {
             updateChartResult.setGenResult(ans.getOnAnalysis());
             updateChartResult.setStatus("succeed");
             boolean updateById = chartService.updateById(updateChartResult);
-            if(!updateById){
-                chartService.handleChartUpdateError(chart.getId(),"更新图表失败");
-         }
-        },threadPoolExecutor);
+            if (!updateById) {
+                chartService.handleChartUpdateError(chart.getId(), "更新图表失败");
+            }
+        }, threadPoolExecutor);
 
 
         AIResultDto ans = new AIResultDto();
@@ -458,9 +461,8 @@ public class ChartController {
     }
 
 
-
     /**
-     * 智能分析(异步)
+     * 智能分析(消息队列异步)
      *
      * @param multipartFile
      * @param genChartByAiRequest
@@ -469,7 +471,7 @@ public class ChartController {
      */
     @PostMapping("/gen/async/mq")
     public BaseResponse<AIResultDto> genChartByAiAsyncMq(@RequestPart("file") MultipartFile multipartFile,
-                                                       GenChartByAiRequest genChartByAiRequest, HttpServletRequest request) {
+                                                         GenChartByAiRequest genChartByAiRequest, HttpServletRequest request) {
         //通过response对象拿到用户id(必须登录才能使用)
         User loginUser = userService.getLoginUser(request);
         String name = genChartByAiRequest.getName();
@@ -498,8 +500,6 @@ public class ChartController {
         ThrowUtils.throwIf(StringUtils.isBlank(suffix), ErrorCode.PARAMS_ERROR, "文件名异常");
         boolean isExcel = suffix.equals("xlsx") || suffix.equals("xls");
         ThrowUtils.throwIf(!isExcel, ErrorCode.PARAMS_ERROR, "文件类型错误");
-
-
 
 
         String data = ExcelUtils.excelToCsv(multipartFile);
@@ -534,7 +534,6 @@ public class ChartController {
         ans.setChartId(chart.getId());
         return ResultUtils.success(ans);
     }
-
 
 
 }

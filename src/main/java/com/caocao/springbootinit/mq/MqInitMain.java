@@ -7,21 +7,25 @@ import com.rabbitmq.client.ConnectionFactory;
 public class MqInitMain {
     public static void main(String[] args) {
         try {
+            //创建连接工厂
             ConnectionFactory factory = new ConnectionFactory();
-            factory.setHost("localhost");
+            // 设置RabbitMQ地址
+            factory.setHost(BiMqConstant.BI_MQ_HOST);
+            factory.setUsername(BiMqConstant.BI_MQ_USERNAME);
+            factory.setPassword(BiMqConstant.BI_MQ_PASSWORD);
+
+            // 创建一个新的连接
             Connection connection = factory.newConnection();
+            // 创建一个通道
             Channel channel = connection.createChannel();
             String EXCHANGE_NAME = MqConstant.EXCHANGE_NAME;
+            //声明交换机,指定交换机类型为direct
             channel.exchangeDeclare(EXCHANGE_NAME, "direct");
             // 创建队列
             String queueName = MqConstant.QUEUE_NAME;
-            /**
-             * durable：指示队列是否持久化。如果设置为true，则RabbitMQ会将队列保存到磁盘上，以便在服务器重启后恢复。如果设置为false，则消息仅存在于内存中，服务器重启时会丢失。默认为false。
-             * exclusive：指示队列是否为专有队列。如果设置为true，则只有声明队列的连接可以使用该队列。一旦连接关闭，队列就会自动删除。默认为false。
-             * autoDelete：指示队列是否为自动删除队列。如果设置为true，则队列在消费者断开连接时会自动删除。默认为false。
-             * arguments：用于设置一些额外的参数。它是一个Map类型的参数，可以根据需要传递一些额外的参数。例如，可以设置队列的最大长度、超时时间等。
-             */
+            // 声明队列，设置队列持久化、非独占、非自动删除，并传入额外的参数为 null
             channel.queueDeclare(queueName, true, false, false, null);
+            // 将队列绑定到交换机，指定路由键为 "my_routingKey"
             channel.queueBind(queueName, EXCHANGE_NAME, MqConstant.ROUTING_KEY);
         } catch (Exception e) {
             System.err.println(e.getMessage());

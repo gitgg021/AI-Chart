@@ -1,13 +1,13 @@
 package com.caocao.springbootinit.mq;
 
 import com.caocao.springbootinit.common.ErrorCode;
-import com.caocao.springbootinit.controller.ChartController;
 import com.caocao.springbootinit.exception.BusinessException;
 import com.caocao.springbootinit.manager.RedisLimiterManager;
 import com.caocao.springbootinit.model.dto.chart.AIResultDto;
 import com.caocao.springbootinit.model.entity.Chart;
 import com.caocao.springbootinit.service.ChartService;
 import com.caocao.springbootinit.utils.AiUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.rabbitmq.client.Channel;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -30,7 +30,7 @@ public class BiConsumer {
     @Resource
     RedissonClient redissonClient;
     @RabbitListener(queues = {"bi_queue"},ackMode = "MANUAL")
-    public void receiveMessage(String message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) {
+    public void receiveMessage(String message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws JsonProcessingException {
         if (StringUtils.isBlank(message)) {
             log.error("信息为空");
             //空消息是没有价值的，直接确认
@@ -54,7 +54,7 @@ public class BiConsumer {
         res.append("你是一个数据分析师和前端开发专家，接下来我会按照以下固定格式给你提供内容：");
         res.append("\n").append("分析需求：").append("\n").append("{").append(goal).append("}").append("\n");
         res.append("原始数据:").append("\n").append(data);
-        res.append("请根据这两部分内容，按照以下指定格式生成内容（此外不要输出任何多余的开头、结尾、注释）\n【【【【【\n先输出上面原始数据的分析结果：\n然后输出【【【【【\n{前端 Echarts V5 的 option 配置对象JSON代码，生成");
+        res.append("请根据这两部分内容，按照以下指定格式生成内容（此外不要输出任何多余的开头、结尾、注释）\n【【【【【\n先输出上面原始数据的分析结果：\n然后输出【【【【【\n{(JSON格式代码) 前端 Echarts V5 option 配置对象 JSON ,生成}");
         res.append(chartType);
         res.append("合理地将数据进行可视化，不要生成任何多余的内容，不要注释}");
 

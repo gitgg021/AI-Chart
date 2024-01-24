@@ -12,5 +12,5 @@ import lombok.extern.slf4j.Slf4j;
 
 public interface ChartService extends IService<Chart> {
     //定义一个异常工具类
-    public void handleChartUpdateError(long chartId, String execMessage);
+     void handleChartUpdateError(long chartId, String execMessage);
 }
