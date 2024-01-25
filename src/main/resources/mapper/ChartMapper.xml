@@ -17,7 +17,7 @@
             <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
             <result property="name" column="name" jdbcType="VARCHAR"/>
             <result property="execMessage" column="execMessage" jdbcType="VARCHAR"/>
-            <result property="chartState" column="status" jdbcType="INTEGER"/>
+            <result property="status" column="status" jdbcType="INTEGER"/>
     </resultMap>
 
     <sql id="Base_Column_List">
@@ -25,7 +25,7 @@
         chartType,genChart,genResult,
         userId,createTime,updateTime,
         isDelete,name,execMessage,
-        chartState
+        status
     </sql>
 
 </mapper>
