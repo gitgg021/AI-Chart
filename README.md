@@ -8,12 +8,10 @@
 随着AIGC的发展，越来越多的领域可以引入人工智能来帮助我们实现一些任务。于是本项目应运而生。不同于传统的数据分析平台,当我们分析数据趋势时需人工导入数据，选择要分析的字段和图表，并由专业数据分析师进行分析。然而，本项目只需导入原始数据和你想要分析的目标, 系统将利用AI自动生成可视化图表和详细的分析结论，使得分析数据更加轻松。  
 ## 项目架构图 🔥 
 ### 基础架构
-基础架构：客户端输入分析诉求和原始数据，向业务后端发送请求。业务后端利用AI服务处理客户端数据，保持到数据库，并生成图表。处理后的数据由业务后端发送给AI服务，AI服务生成结果并返回给后端，最终将结果返回给客户端展示。
+![image](https://github.com/gitgg021/AI-Chart/blob/master/images/1.png)
 
 ### 优化项目架构-异步化处理
-优化流程（异步化）：客户端输入分析诉求和原始数据，向业务后端发送请求。业务后端将请求事件放入消息队列，并为客户端生成取餐号，让要生成图表的客户端去排队，消息队列根据I服务负载情况，定期检查进度，如果AI服务还能处理更多的图表生成请求，就向任务处理模块发送消息。
-
-任务处理模块调用AI服务处理客户端数据，AI 服务异步生成结果返回给后端并保存到数据库，当后端的AI工服务生成完毕后，可以通过向前端发送通知的方式，或者通过业务后端监控数据库中图表生成服务的状态，来确定生成结果是否可用。若生成结果可用，前端即可获取并处理相应的数据，最终将结果返回给客户端展示。在此期间，用户可以去做自己的事情。
+![image](https://github.com/gitgg021/AI-Chart/blob/master/images/2.png)
 
 ## 项目功能 🎊  
 ### 已有功能
@@ -60,5 +58,22 @@ MySQL
 腾讯云   
 宝塔Linux  
 ## 项目展示🎊
+### 注册页
+![image](https://github.com/gitgg021/AI-Chart/blob/master/images/10.png)
+### 登录页
+![image](https://github.com/gitgg021/AI-Chart/blob/master/images/11.png)
+### 智能分析页
+![image](https://github.com/gitgg021/AI-Chart/blob/master/images/12.png)
+### 图表管理页
+![image](https://github.com/gitgg021/AI-Chart/blob/master/images/13.png)
+### 图表详情页
+![image](https://github.com/gitgg021/AI-Chart/blob/master/images/14.png)
+### 分页
+![image](https://github.com/gitgg021/AI-Chart/blob/master/images/15.png)
+### 查询页
+![image](https://github.com/gitgg021/AI-Chart/blob/master/images/16.png)
+
+
+
 
 
