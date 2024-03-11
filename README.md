@@ -39,8 +39,7 @@
 ### 后端  
 Spring Boot 2.7.2  
 MyBatis   
-MyBatis Plus   
-Redis  
+MyBatis Plus    
 RabbitMQ  
 讯飞星火API  
 Swagger + Knife4j 项目文档  
@@ -54,8 +53,8 @@ OpenAPI 代码生成
 EChart 图表生成  
 
 ### 数据存储
-MySQL 
-
+MySQL
+Redis
 ### 部署上线
 腾讯云   
 宝塔Linux  
