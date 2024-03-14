@@ -1,4 +1,4 @@
-# AI数据可视化平台
+# AI数据可视化分析平台
  `作者 CaoCao 😄`
 ## 项目介绍 📢
 本项目是基于React+Spring Boot+RabbitMQ+AIGC的智能BI数据分析平台。 
@@ -52,7 +52,6 @@ EChart 图表生成
 
 ### 数据存储
 MySQL
-Redis
 ### 部署上线
 腾讯云   
 宝塔Linux  
